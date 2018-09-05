@@ -16,8 +16,8 @@ the file in an authenticated way without having to resort to a centralized
 data provider.
 
 You have to publish the metadata file to Swarm (or another service) so that
-others can access it. You create the file by using the  ``solc --metadata``
-command that creates a file called ``ContractName_meta.json``. It contains
+others can access it. You create the file by using the ``solc --metadata``
+command that generates a file called ``ContractName_meta.json``. It contains
 Swarm references to the source code, so you have to upload all source files and
 the metadata file.
 
@@ -98,7 +98,7 @@ explanatory purposes.
 
 Since the bytecode of the resulting contract contains the metadata hash, any
 change to the metadata results in a change of the bytecode. This includes
-changes to filename or path, and since the metadata includes a hash of all the
+changes to a filename or path, and since the metadata includes a hash of all the
 sources used, a single whitespace change results in different metadata, and
 different bytecode.
 
