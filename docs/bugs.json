@@ -6,7 +6,7 @@
 		"introduced": "0.4.17",
 		"fixed": "0.5.0",
 		"severity": "very low",
-		"check": {"json-path": [{"name": "EventDefinition"}, {"name": "UserDefinedTypeName", "type": "struct"}]}
+		"check": {"json-path": {"query": "$..[?(@.name === 'EventDefinition')]..[?(@.name === 'UserDefinedTypeName' && @.attributes.type.startsWith('struct'))]", "astType": "ast-json"}}
 	},
 	{
 		"name": "NestedArrayFunctionCallDecoder",

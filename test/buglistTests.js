@@ -4,6 +4,7 @@
 
 var util = require('util')
 var exec = util.promisify(require('child_process').exec)
+var mktemp = require('mktemp');
 var download = require('download')
 var JSONPath = require('JSONPath')
 var fs = require('fs')
@@ -23,97 +24,103 @@ var tests = fs.readFileSync(__dirname + '/buglist_test_vectors.md', 'utf8')
 
 var testVectorParser = /\s*#\s+(\S+)\s+## buggy\n([^#]*)## fine\n([^#]*)/g
 
-var result;
-while ((result = testVectorParser.exec(tests)) !== null)
-{
-    var name = result[1]
-    var buggy = result[2].split('\n--\n')
-    var fine = result[3].split('\n--\n')
-    console.log("Testing " + name + " with " + buggy.length + " buggy and " + fine.length + " fine instances")
+runTests()
 
-	checkRegex(name, buggy, fine)
-	checkJSONPath(name, buggy, fine)
+async function runTests()
+{
+	var result;
+	while ((result = testVectorParser.exec(tests)) !== null)
+	{
+		var name = result[1]
+		var buggy = result[2].split('\n--\n')
+		var fine = result[3].split('\n--\n')
+		console.log("Testing " + name + " with " + buggy.length + " buggy and " + fine.length + " fine instances")
+
+		try {
+			await checkRegex(name, buggy, fine)
+			await checkJSONPath(name, buggy, fine)
+		} catch (err) {
+			console.error("Error: " + err)
+		}
+	}
 }
 
 function checkRegex(name, buggy, fine)
 {
-    var regexStr = bugsByName[name].check['regex-source']
-    if (regexStr !== undefined)
-    {
-        var regex = RegExp(regexStr)
-        for (var i in buggy)
-        {
-            if (!regex.exec(buggy[i]))
-            {
-                throw "Bug " + name + ": Buggy source does not match: " + buggy[i]
-            }
-        }
-        for (var i in fine)
-        {
-            if (regex.exec(fine[i]))
-            {
-                throw "Bug " + name + ": Non-buggy source matches: " + fine[i]
-            }
-        }
-    }
-}
-
-function checkJSONPath(name, buggy, fine)
-{
-    var jsonPath = bugsByName[name].check['json-path']
-    if (jsonPath !== undefined)
-    {
-        var url = "http://github.com/ethereum/solidity/releases/download/v" + bugsByName[name].introduced + "/solc-static-linux"
-        var binary = __dirname + "/solc-static-linux"
-        download(url, __dirname)
-        .then(() => {
-            return exec("chmod +x " + binary)
-        })
-        .then((data) => {
-            for (var i in buggy)
-            {
-                checkJsonPath(buggy[i], binary, jsonPath, i)
-                .then((result) => {
-                    if (!result)
-                        throw "Bug " + name + ": Buggy source does not contain path: " + buggy[i]
-                })
-            }
-            for (var i in fine)
-            {
-                checkJsonPath(fine[i], binary, jsonPath, i + buggy.length)
-                .then((result) => {
-                    if (result)
-                        throw "Bug " + name + ": Non-buggy source contains path: " + fine[i]
-                })
-            }
-        })
-        .catch((err) => {
-            throw "Error in checking json-path for bug " + name + ": " + err
-        })
-    }
-}
-
-function checkJsonPath(code, binary, path, idx) {
     return new Promise(function(resolve, reject) {
-        var solFile = __dirname + "/jsonPath" + idx + ".sol"
-        var astFile = __dirname + "/ast" + idx + ".json"
+		var regexStr = bugsByName[name].check['regex-source']
+		if (regexStr !== undefined)
+		{
+			var regex = RegExp(regexStr)
+			for (var i in buggy)
+			{
+				if (!regex.exec(buggy[i]))
+				{
+					reject("Bug " + name + ": Buggy source does not match: " + buggy[i])
+				}
+			}
+			for (var i in fine)
+			{
+				if (regex.exec(fine[i]))
+				{
+					reject("Bug " + name + ": Non-buggy source matches: " + fine[i])
+				}
+			}
+		}
+		resolve()
+	})
+}
+
+async function checkJSONPath(name, buggy, fine)
+{
+	var jsonPath = bugsByName[name].check['json-path']
+	if (jsonPath !== undefined)
+	{
+		var url = "http://github.com/ethereum/solidity/releases/download/v" + bugsByName[name].introduced + "/solc-static-linux"
+		try {
+			var tmpdir = await mktemp.createDir('XXXXX')
+			console.log("Tmpdir is " + tmpdir)
+			var binary = tmpdir + "/solc-static-linux"
+			console.log("Binary is " + binary)
+			await download(url, tmpdir)
+			exec("chmod +x " + binary)
+			if (jsonPath.query === undefined)
+				throw "JSONPath query not provided by buglist"
+			var query = jsonPath.query
+			if (jsonPath.astType === undefined)
+				throw "AST type not provided by buglist"
+			var astType = jsonPath.astType
+			for (var i in buggy)
+			{
+				var result = await checkJsonPathTest(buggy[i], tmpdir, binary, query, astType, i)
+				if (!result)
+					throw "Bug " + name + ": Buggy source does not contain path: " + buggy[i]
+			}
+			for (var i in fine)
+			{
+				var result = await checkJsonPathTest(fine[i], tmpdir, binary, query, astType, i + buggy.length)
+				if (result)
+					throw "Bug " + name + ": Non-buggy source contains path: " + fine[i]
+			}
+			exec("rm -r " + tmpdir)
+		} catch (err) {
+			throw err
+		}
+	}
+}
+
+function checkJsonPathTest(code, tmpdir, binary, query, astType, idx) {
+    return new Promise(function(resolve, reject) {
+        var solFile = tmpdir + "/jsonPath" + idx + ".sol"
+        var astFile = tmpdir + "/ast" + idx + ".json"
         writeFilePromise(solFile, code)
         .then(() => {
-            return exec(binary + " --ast-json " + solFile + " > " + astFile)
+            return exec(binary + " --" + astType + " " + solFile + " > " + astFile)
         })
         .then(() => {
-            var jsonRE = /(\{[\s\S]*})/
+            var jsonRE = /(\{[\s\S]*\})/
             var ast = JSON.parse(jsonRE.exec(fs.readFileSync(astFile, 'utf8'))[0])
-            var query = "$"
-            for (var i in path)
-            {
-                var node = path[i]
-                query += "..[?(@.name === '" + node.name + "'"
-                if (node.type !== undefined)
-                    query += " && @.attributes.type.startsWith('" + node.type + "')"
-                query += ")]"
-            }
-            result = JSONPath({json: ast, path: query})
+            var result = JSONPath({json: ast, path: query})
             if (result.length > 0)
                 resolve(true)
             else
@@ -121,9 +128,6 @@ function checkJsonPath(code, binary, path, idx) {
         })
         .catch((err) => {
             reject(err)
-        })
-        .finally(() => {
-            exec("rm " + solFile + " " + astFile)
         })
     })
 }

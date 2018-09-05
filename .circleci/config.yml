@@ -200,6 +200,7 @@ jobs:
           command: |
             npm install download
             npm install JSONPath
+            npm install mktemp
       - run:
           name: Test buglist
           command: ./test/buglistTests.js
