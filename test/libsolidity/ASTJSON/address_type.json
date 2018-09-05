@@ -1,0 +1,95 @@
+{
+	"absolutePath" : "a",
+	"exportedSymbols" : 
+	{
+		"C" : 
+		[
+			5
+		]
+	},
+	"id" : 6,
+	"nodeType" : "SourceUnit",
+	"nodes" : 
+	[
+		{
+			"baseContracts" : [],
+			"contractDependencies" : [],
+			"contractKind" : "contract",
+			"documentation" : null,
+			"fullyImplemented" : true,
+			"id" : 5,
+			"linearizedBaseContracts" : 
+			[
+				5
+			],
+			"name" : "C",
+			"nodeType" : "ContractDefinition",
+			"nodes" : 
+			[
+				{
+					"constant" : false,
+					"id" : 2,
+					"name" : "a",
+					"nodeType" : "VariableDeclaration",
+					"scope" : 5,
+					"src" : "14:9:1",
+					"stateMutability" : "nonpayable",
+					"stateVariable" : true,
+					"storageLocation" : "default",
+					"typeDescriptions" : 
+					{
+						"typeIdentifier" : "t_address",
+						"typeString" : "address"
+					},
+					"typeName" : 
+					{
+						"id" : 1,
+						"name" : "address",
+						"nodeType" : "ElementaryTypeName",
+						"src" : "14:7:1",
+						"typeDescriptions" : 
+						{
+							"typeIdentifier" : "t_address",
+							"typeString" : "address"
+						}
+					},
+					"value" : null,
+					"visibility" : "internal"
+				},
+				{
+					"constant" : false,
+					"id" : 4,
+					"name" : "b",
+					"nodeType" : "VariableDeclaration",
+					"scope" : 5,
+					"src" : "26:17:1",
+					"stateMutability" : "payable",
+					"stateVariable" : true,
+					"storageLocation" : "default",
+					"typeDescriptions" : 
+					{
+						"typeIdentifier" : "t_address_payable",
+						"typeString" : "address payable"
+					},
+					"typeName" : 
+					{
+						"id" : 3,
+						"name" : "address",
+						"nodeType" : "ElementaryTypeName",
+						"src" : "26:7:1",
+						"typeDescriptions" : 
+						{
+							"typeIdentifier" : "t_address",
+							"typeString" : "address"
+						}
+					},
+					"value" : null,
+					"visibility" : "internal"
+				}
+			],
+			"scope" : 6,
+			"src" : "0:46:1"
+		}
+	],
+	"src" : "0:47:1"
+}

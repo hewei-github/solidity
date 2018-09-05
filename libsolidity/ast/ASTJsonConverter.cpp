@@ -355,6 +355,15 @@ bool ASTJsonConverter::visit(VariableDeclaration const& _node)
 	};
 	if (m_inEvent)
 		attributes.push_back(make_pair("indexed", _node.isIndexed()));
+	if (_node.type()->category() == Type::Category::Address)
+	{
+		StateMutability stateMutability = StateMutability::NonPayable;
+		if (_node.stateMutability())
+			stateMutability = *_node.stateMutability();
+
+		attributes.push_back(make_pair("stateMutability", stateMutabilityToString(stateMutability)));
+	}
+
 	setJsonNode(_node, "VariableDeclaration", std::move(attributes));
 	return false;
 }

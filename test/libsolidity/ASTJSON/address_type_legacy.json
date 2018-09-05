@@ -1,0 +1,107 @@
+{
+	"attributes" : 
+	{
+		"absolutePath" : "a",
+		"exportedSymbols" : 
+		{
+			"C" : 
+			[
+				5
+			]
+		}
+	},
+	"children" : 
+	[
+		{
+			"attributes" : 
+			{
+				"baseContracts" : 
+				[
+					null
+				],
+				"contractDependencies" : 
+				[
+					null
+				],
+				"contractKind" : "contract",
+				"documentation" : null,
+				"fullyImplemented" : true,
+				"linearizedBaseContracts" : 
+				[
+					5
+				],
+				"name" : "C",
+				"scope" : 6
+			},
+			"children" : 
+			[
+				{
+					"attributes" : 
+					{
+						"constant" : false,
+						"name" : "a",
+						"scope" : 5,
+						"stateMutability" : "nonpayable",
+						"stateVariable" : true,
+						"storageLocation" : "default",
+						"type" : "address",
+						"value" : null,
+						"visibility" : "internal"
+					},
+					"children" : 
+					[
+						{
+							"attributes" : 
+							{
+								"name" : "address",
+								"type" : "address"
+							},
+							"id" : 1,
+							"name" : "ElementaryTypeName",
+							"src" : "14:7:1"
+						}
+					],
+					"id" : 2,
+					"name" : "VariableDeclaration",
+					"src" : "14:9:1"
+				},
+				{
+					"attributes" : 
+					{
+						"constant" : false,
+						"name" : "b",
+						"scope" : 5,
+						"stateMutability" : "payable",
+						"stateVariable" : true,
+						"storageLocation" : "default",
+						"type" : "address payable",
+						"value" : null,
+						"visibility" : "internal"
+					},
+					"children" : 
+					[
+						{
+							"attributes" : 
+							{
+								"name" : "address",
+								"type" : "address"
+							},
+							"id" : 3,
+							"name" : "ElementaryTypeName",
+							"src" : "26:7:1"
+						}
+					],
+					"id" : 4,
+					"name" : "VariableDeclaration",
+					"src" : "26:17:1"
+				}
+			],
+			"id" : 5,
+			"name" : "ContractDefinition",
+			"src" : "0:46:1"
+		}
+	],
+	"id" : 6,
+	"name" : "SourceUnit",
+	"src" : "0:47:1"
+}
