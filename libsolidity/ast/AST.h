@@ -666,7 +666,8 @@ public:
 		bool _isStateVar = false,
 		bool _isIndexed = false,
 		bool _isConstant = false,
-		Location _referenceLocation = Location::Unspecified
+		Location _referenceLocation = Location::Unspecified,
+		boost::optional<StateMutability> _stateMutability = {}
 	):
 		Declaration(_sourceLocation, _name, _visibility),
 		m_typeName(_type),
@@ -674,7 +675,8 @@ public:
 		m_isStateVariable(_isStateVar),
 		m_isIndexed(_isIndexed),
 		m_isConstant(_isConstant),
-		m_location(_referenceLocation) {}
+		m_location(_referenceLocation),
+		m_stateMutability(_stateMutability) {}
 
 	virtual void accept(ASTVisitor& _visitor) override;
 	virtual void accept(ASTConstVisitor& _visitor) const override;
@@ -714,6 +716,7 @@ public:
 	bool isIndexed() const { return m_isIndexed; }
 	bool isConstant() const { return m_isConstant; }
 	Location referenceLocation() const { return m_location; }
+	boost::optional<StateMutability> stateMutability() const { return m_stateMutability; }
 	/// @returns a set of allowed storage locations for the variable.
 	std::set<Location> allowedDataLocations() const;
 
@@ -737,6 +740,7 @@ private:
 	bool m_isIndexed; ///< Whether this is an indexed variable (used by events).
 	bool m_isConstant; ///< Whether the variable is a compile-time constant.
 	Location m_location; ///< Location of the variable if it is of reference type.
+	boost::optional<StateMutability> m_stateMutability; ///< State mutability for address types.
 };
 
 /**

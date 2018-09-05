@@ -57,7 +57,7 @@ public:
 		solAssert(m_location.sourceName, "");
 		if (m_location.end < 0)
 			markEndPosition();
-		return make_shared<NodeType>(m_location, forward<Args>(_args)...);
+		return make_shared<NodeType>(m_location, std::forward<Args>(_args)...);
 	}
 
 private:
@@ -566,6 +566,7 @@ ASTPointer<VariableDeclaration> Parser::parseVariableDeclaration(
 	Declaration::Visibility visibility(Declaration::Visibility::Default);
 	VariableDeclaration::Location location = VariableDeclaration::Location::Unspecified;
 	ASTPointer<ASTString> identifier;
+	boost::optional<StateMutability> stateMutability;
 
 	while (true)
 	{
@@ -584,6 +585,21 @@ ASTPointer<VariableDeclaration> Parser::parseVariableDeclaration(
 			}
 			else
 				visibility = parseVisibilitySpecifier(token);
+		}
+		else if (Token::isStateMutabilitySpecifier(token) && token != Token::Constant)
+		{
+			nodeFactory.markEndPosition();
+			if (stateMutability)
+			{
+				parserError(string(
+					"State mutability already specified as \"" +
+					stateMutabilityToString(*stateMutability) +
+					"\"."
+				));
+				m_scanner->next();
+			}
+			else
+				stateMutability = parseStateMutability(token);
 		}
 		else
 		{
@@ -650,7 +666,8 @@ ASTPointer<VariableDeclaration> Parser::parseVariableDeclaration(
 		_options.isStateVariable,
 		isIndexed,
 		isDeclaredConst,
-		location
+		location,
+		stateMutability
 	);
 }
 
@@ -1609,7 +1626,7 @@ Parser::LookAheadInfo Parser::peekStatementType() const
 	if (mightBeTypeName)
 	{
 		Token::Value next = m_scanner->peekNextToken();
-		if (next == Token::Identifier || Token::isLocationSpecifier(next))
+		if (next == Token::Identifier || Token::isLocationSpecifier(next) || (Token::isStateMutabilitySpecifier(next) && next != Token::Constant))
 			return LookAheadInfo::VariableDeclaration;
 		if (next == Token::LBrack || next == Token::Period)
 			return LookAheadInfo::IndexAccessStructure;

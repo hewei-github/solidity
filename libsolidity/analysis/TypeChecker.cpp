@@ -838,6 +838,24 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		break;
 	}
 
+	if (varType->category() == Type::Category::Address)
+	{
+		if (_variable.stateMutability())
+			switch (*_variable.stateMutability())
+			{
+				case StateMutability::NonPayable:
+				case StateMutability::Payable:
+					_variable.annotation().type = make_shared<AddressType>(*_variable.stateMutability());
+					break;
+				default:
+					m_errorReporter.typeError(_variable.location(), "State mutability for address types must be payable or non-payable.");
+					break;
+			}
+	}
+	else if (_variable.stateMutability())
+		m_errorReporter.typeError(_variable.location(), "State mutability can only be specified for address types.");
+
+
 	return false;
 }
 
@@ -1732,14 +1750,39 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 				dataLoc = argRefType->location();
 			resultType = ReferenceType::copyForLocationIfReference(dataLoc, resultType);
 			if (!argType->isExplicitlyConvertibleTo(*resultType))
-				m_errorReporter.typeError(
-					_functionCall.location(),
-					"Explicit type conversion not allowed from \"" +
-					argType->toString() +
-					"\" to \"" +
-					resultType->toString() +
-					"\"."
-				);
+			{
+				if (resultType->category() == Type::Category::Contract && argType->category() == Type::Category::Address)
+				{
+					solAssert(dynamic_cast<ContractType const*>(resultType.get())->isPayable(), "");
+					solAssert(dynamic_cast<AddressType const*>(argType.get())->stateMutability() < StateMutability::Payable, "");
+					SecondarySourceLocation ssl;
+					if (auto const* identifier = dynamic_cast<Identifier const*>(arguments.front().get()))
+						if (auto const* variableDeclaration = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+							ssl.append("Did you mean to declare this variable as \"address payable\"?", variableDeclaration->location());
+					m_errorReporter.typeError(
+						_functionCall.location(), ssl,
+						"Explicit type conversion not allowed from non-payable \"address\" to \"" +
+						resultType->toString() +
+						"\", which has a payable fallback function."
+					);
+				}
+				else
+					m_errorReporter.typeError(
+						_functionCall.location(),
+						"Explicit type conversion not allowed from \"" +
+						argType->toString() +
+						"\" to \"" +
+						resultType->toString() +
+						"\"."
+					);
+			}
+			if (resultType->category() == Type::Category::Address)
+			{
+				if (auto const* contractType = dynamic_cast<ContractType const*>(argType.get()))
+					resultType = make_shared<AddressType>(contractType->isPayable() ? StateMutability::Payable : StateMutability::NonPayable);
+				else
+					resultType = make_shared<AddressType>(StateMutability::Payable);
+			}
 		}
 		_functionCall.annotation().type = resultType;
 		_functionCall.annotation().isPure = isPure;
@@ -2103,7 +2146,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 				"after argument-dependent lookup in " + exprType->toString() +
 				(memberName == "value" ? " - did you forget the \"payable\" modifier?" : ".");
 		if (exprType->category() == Type::Category::Contract)
-			for (auto const& addressMember: AddressType().nativeMembers(nullptr))
+			for (auto const& addressMember: AddressType(StateMutability::Payable).nativeMembers(nullptr))
 				if (addressMember.name == memberName)
 				{
 					Identifier const* var = dynamic_cast<Identifier const*>(&_memberAccess.expression());
@@ -2354,7 +2397,7 @@ void TypeChecker::endVisit(Literal const& _literal)
 	if (_literal.looksLikeAddress())
 	{
 		// Assign type here if it even looks like an address. This prevents double errors for invalid addresses
-		_literal.annotation().type = make_shared<AddressType>();
+		_literal.annotation().type = make_shared<AddressType>(StateMutability::Payable);
 
 		string msg;
 		if (_literal.value().length() != 42) // "0x" + 40 hex digits
