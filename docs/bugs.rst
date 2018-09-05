@@ -63,10 +63,12 @@ check
     ("source-regex") if the bug is present.  If there is no match, then the
     bug is very likely not present. If there is a match, the bug might be
     present. The second type of check are patterns to be checked on the AST of
-    the Solidity program ("json-path"). If at least one path of the Solidity
-    AST contains the list of nodes given, in the same order, the bug is likely
-    present.  For improved accuracy, the checks should be applied to the
-    source code after stripping comments.
+    the Solidity program ("json-path"). The subfield "query" specifies the
+    search and follows the format given `here <https://github.com/json-path/JsonPath>`_.
+    The subfield "ast-type" specifies the Solidity option used to generate the
+    AST ("ast-json or ast-compact-json"). If at least one path of the Solidity
+    AST matches the query, the bug is likely present.  For improved accuracy,
+    the checks should be applied to the source code after stripping comments.
 
 .. literalinclude:: bugs.json
    :language: js
